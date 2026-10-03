@@ -1,69 +1,50 @@
-# ShipForge — Ship Design & Sea Trial Simulator
-
-Full-stack version of the ShipForge demo: a FastAPI + MySQL backend behind
-the original single-page frontend, following the same pattern as the
-ครัวชัวร์ Nutrition REST API project (FastAPI/Python, MySQL 8.4, JWT + Argon2,
-Docker Compose, Swagger docs).
-
-## Tech stack
-
-- **Frontend:** static HTML/CSS/JS (`frontend/index.html`), served by nginx
-- **Backend:** FastAPI / Python
-- **Database:** MySQL 8.4
-- **Authentication:** JWT + Argon2 password hashing
-- **Container:** Docker + Docker Compose
-- **API docs:** Swagger UI
-
-## Run
-
-```
+ShipForge — Ship Design & Sea Trial Simulator
+Full-stack version of the ShipForge demo: a FastAPI + MySQL backend behind the original single-page frontend.
+Tech Stack
+Frontend: HTML/CSS/JavaScript (`frontend/index.html`)
+Backend: FastAPI / Python
+Database: MySQL 8.4
+Authentication: JWT + Argon2 password hashing
+Container: Docker + Docker Compose
+API Docs: Swagger UI
+Web Server: nginx
+Run
+```bash
 docker compose up --build
 ```
-
-Then open:
-
-- Frontend (the game): http://localhost:8080
-- Swagger: http://localhost:8000/docs
-- Health check: http://localhost:8000/api/health
-
-The frontend talks to the backend at `http://localhost:8000/api` by
-default. To point it at a different backend URL, set
-`window.SHIPFORGE_API_BASE` before `index.html`'s script runs, or edit the
-`API_BASE` constant near the top of the `<script>` block.
-
-## API overview
-
-### Authentication
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `POST /api/auth/change-password`
-
-### User management
-
-- `GET /api/me`
-- `GET /api/users/{id}`
-- `GET /api/users?page=1&limit=10`
-- `PUT /api/users/{id}`
-- `DELETE /api/users/{id}`
-- `GET /api/check-username/{name}`
-
-### ShipForge project API
-
-- `GET /api/parts?search=engine` — browse the part catalog
-- `GET /api/materials` — browse the material catalog
-- `POST /api/ships` — save a ship (blueprint + material + ship type)
-- `GET /api/ships` — list your saved ships
-- `GET /api/ships/{id}` — load one ship
-- `DELETE /api/ships/{id}`
-- `POST /api/ships/{id}/inspect` — run the safety inspection server-side
-  (same formulas as the frontend's live readout, recomputed from the DB)
-- `POST /api/ships/{id}/sea-trial` — store a completed sea trial result
-- `GET /api/ships/{id}/trials` — sea trial history for a ship
-
-## Example register
-
+จากนั้นเปิด:
+Frontend: http://localhost:8080
+Swagger: http://localhost:8000/docs
+Health Check: http://localhost:8000/api/health
+Frontend จะเชื่อมต่อ Backend ผ่าน:
+```text
+http://localhost:8000/api
+```
+หากต้องการเปลี่ยน URL ของ Backend สามารถกำหนด `window.SHIPFORGE_API_BASE` ก่อน script หลักของ `index.html` ทำงาน หรือแก้ค่า `API_BASE` ภายในไฟล์ `frontend/index.html`
+API ที่ตรงกับโปรเจกต์
+1. Authentication
+`POST /api/auth/register`
+`POST /api/auth/login`
+`POST /api/auth/logout`
+`POST /api/auth/change-password`
+2. User Management
+`GET /api/me`
+`GET /api/users/{id}`
+`GET /api/users?page=1&limit=10`
+`PUT /api/users/{id}`
+`DELETE /api/users/{id}`
+`GET /api/check-username/{name}`
+3. ShipForge Project API
+`GET /api/parts?search=engine` — ดูรายการชิ้นส่วนเรือ
+`GET /api/materials` — ดูรายการวัสดุ
+`POST /api/ships` — บันทึกแบบเรือ
+`GET /api/ships` — ดูรายการเรือของผู้ใช้
+`GET /api/ships/{id}` — ดูรายละเอียดเรือ
+`DELETE /api/ships/{id}` — ลบเรือ
+`POST /api/ships/{id}/inspect` — ตรวจสอบความปลอดภัยของเรือ
+`POST /api/ships/{id}/sea-trial` — บันทึกผลการทดลองเดินเรือ
+`GET /api/ships/{id}/trials` — ดูประวัติการทดลองเดินเรือ
+Example Register
 ```json
 {
   "username": "testuser",
@@ -72,49 +53,101 @@ default. To point it at a different backend URL, set
   "password": "12345678"
 }
 ```
-
-## Example login
-
+Example Login
 ```json
 {
   "username": "testuser",
   "password": "12345678"
 }
 ```
-
-Paste the returned `access_token` into Swagger's **Authorize** button as:
-
-```
+หลังจาก Login สำเร็จ ให้นำ `access_token` ไปใส่ใน Swagger ที่ปุ่ม Authorize ในรูปแบบ:
+```text
 Bearer <access_token>
 ```
-
-## Example create ship
-
+Example Create Ship
 ```json
 {
   "name": "Northern Star",
   "ship_type": "fishing",
   "material_key": "steel",
   "parts": [
-    {"part_key": "hull", "x": 2, "y": 2},
-    {"part_key": "engine", "x": 4, "y": 2},
-    {"part_key": "fuelTank", "x": 5, "y": 2}
+    {
+      "part_key": "hull",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "part_key": "engine",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "part_key": "fuelTank",
+      "x": 5,
+      "y": 2
+    }
   ]
 }
 ```
-
-The API computes `safety_score`, `stability`, `buoyancy`, `range` and the
-rest from the parts + material, the same way the frontend's live blueprint
-readout does — the calculation lives in `backend/app/calc.py`, ported from
-the frontend's JS so both sides agree.
-
-## Relationship to the single-file demo
-
-The original `shipforge.html` demo kept a hardcoded catalog of parts and
-materials, and computed everything in the browser. This backend moves that
-catalog into MySQL (`parts`, `materials` tables) and the calculation into a
-REST API, the same move the nutrition project made from
-`nutrition-appnew.html` to its FastAPI backend. The frontend here still
-works fully offline (local JS calculation) — login lets you additionally
-save/load ships to your account and verify a ship's safety score against
-the server.
+ระบบจะคำนวณค่าต่าง ๆ ของเรือ เช่น:
+`safety_score`
+`stability`
+`buoyancy`
+`range`
+โดยใช้ข้อมูลจากชิ้นส่วนและวัสดุของเรือ
+การคำนวณฝั่ง Backend อยู่ใน:
+```text
+backend/app/calc.py
+```
+Relationship to the Original ShipForge Demo
+เวอร์ชันเดิมของ ShipForge เป็น Single-page application ซึ่งเก็บข้อมูลชิ้นส่วนและวัสดุไว้ใน JavaScript และทำการคำนวณภายใน Browser
+ในเวอร์ชัน Full-stack นี้ ข้อมูลและการทำงานบางส่วนถูกแยกออกมาเป็น Backend และ Database:
+```text
+ShipForge
+│
+├── Frontend
+│   └── HTML / CSS / JavaScript
+│
+├── Backend
+│   └── FastAPI / Python
+│
+└── Database
+    └── MySQL
+```
+Frontend ยังคงมีระบบคำนวณแบบ Live สำหรับการออกแบบเรือ ขณะที่ Backend สามารถคำนวณและตรวจสอบข้อมูลผ่าน API ได้
+Authentication
+ระบบ Authentication ใช้:
+JWT สำหรับการยืนยันตัวตน
+Argon2 สำหรับ Hash Password
+Protected API สำหรับข้อมูลที่เกี่ยวข้องกับบัญชีผู้ใช้
+ตัวอย่างการทำงาน:
+```text
+Register
+   ↓
+Login
+   ↓
+Receive access_token
+   ↓
+Authorize API
+   ↓
+Save / Load Ship
+```
+Docker Services
+ระบบประกอบด้วย Docker services หลัก:
+```text
+docker compose
+│
+├── mysql
+│   └── MySQL 8.4
+│
+├── backend
+│   └── FastAPI
+│
+└── frontend
+    └── nginx
+```
+Port ที่ใช้งาน:
+Service	Port
+Frontend / nginx	`8080`
+Backend / FastAPI	`8000`
+MySQL	`3306`
